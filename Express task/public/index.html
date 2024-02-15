@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Demo</title>
+    <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        #messages { list-style-type: none; margin: 0; padding: 0; }
+        #messages li { padding: 8px; margin-bottom: 2px; background-color: #f3f3f3; }
+    </style>
+</head>
+<body>
+    <h2>WebSocket Messages</h2>
+    <ul id="messages"></ul>
+
+    <script>
+        const socket = io();
+
+        socket.on('new-employee', (data) => {
+            const messages = document.getElementById('messages');
+            const messageElement = document.createElement('li');
+            messageElement.textContent = 'New employee added: ' + data.message;
+            messages.appendChild(messageElement);
+        });
+    </script>
+</body>
+</html>
