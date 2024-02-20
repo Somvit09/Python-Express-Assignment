@@ -2,7 +2,7 @@ const express = require('express');
 const Employee = require("../models/Employee");
 const authenticateToken = require('../middleware/authenticateToken');
 const requireAdmin = require('../middleware/requireAdmin');
-const upload = require("../middleware/upload");
+const { upload, handleMulterExceptions } = require("../middleware/upload");
 const path = require('path');
 
 const router = express.Router();
@@ -22,9 +22,9 @@ module.exports = function (io) {
     // Create an employee for regular user and admin both
     router.post('/create', authenticateToken, async (req, res) => {
         try {
-            if (await Employee.findOne({ id: req.body.id })) {
+            if (await Employee.findOne({ id: req.body.id }) || await Employee.findOne({ email: req.body.email })) {
                 return res.status(409).json({
-                    message: `Employee id ${req.body.id} is already exists in the database.`
+                    message: `Employee is already exists in the database.`
                 });
             }
             const newEmployee = new Employee({
@@ -37,7 +37,7 @@ module.exports = function (io) {
 
             const savedEmployee = await newEmployee.save();
             // notify that  new employee has been added
-            io.emit('new-employee', { 
+            io.emit('new-employee', {
                 message: 'A new employee has been added.',
                 employee: savedEmployee
             });
@@ -88,7 +88,7 @@ module.exports = function (io) {
 
 
     // Upload employee profile picture (admin-only)
-    router.post('/upload_image/:id', [authenticateToken, requireAdmin, upload.single('profilePicture')], async (req, res) => {
+    router.post('/upload_image/:id', [authenticateToken, requireAdmin, handleMulterExceptions], async (req, res) => {
         try {
             const employee = await Employee.findOne({ id: req.params.id });
 
@@ -133,7 +133,6 @@ module.exports = function (io) {
             // Send the file as a response using the absolute file path
             res.download(absoluteFilePath, filename, (err) => {
                 if (err) {
-                    // Handle errors, e.g., file not found
                     res.status(500).send('Error downloading the file.');
                 }
             });
